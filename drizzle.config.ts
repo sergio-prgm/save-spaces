@@ -4,9 +4,9 @@ import { env } from "~/env";
 
 export default {
   schema: "./src/server/db/schema.ts",
-  driver: "better-sqlite",
+  driver: "libsql",
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["save-spaces_*"],
+  // tablesFilter: ["save-spaces_*"],
 } satisfies Config;

@@ -1,12 +1,13 @@
 import { relations, sql } from "drizzle-orm";
 import {
-  index,
+  // index,
   int,
   primaryKey,
-  sqliteTableCreator,
+  sqliteTable,
+  // sqliteTableCreator,
   text,
 } from "drizzle-orm/sqlite-core";
-import { type AdapterAccount } from "next-auth/adapters";
+// import { type AdapterAccount } from "next-auth/adapters";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -14,8 +15,126 @@ import { type AdapterAccount } from "next-auth/adapters";
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = sqliteTableCreator((name) => `save-spaces_${name}`);
+//export const createTable = sqliteTableCreator((name) => `save-spaces_${name}`);
 
+export const users = sqliteTable("user", {
+  id: text("id", { length: 255 }).notNull().primaryKey(),
+  name: text("name", { length: 255 }),
+  email: text("email", { length: 255 }).notNull(),
+  emailVerified: int("emailVerified", {
+    mode: "timestamp",
+  }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const usersRelations = relations(users, ({ many }) => ({
+  usersToGroups: many(usersToGroups),
+  usersToSpaces: many(usersToSpaces),
+}));
+
+export const spaces = sqliteTable("space", {
+  id: int("id", { mode: "number" }).primaryKey(),
+  name: text("name").notNull(),
+  createdAt: int("created_at", { mode: "timestamp" })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  url: text("url"),
+});
+
+export const spacesRelations = relations(spaces, ({ many }) => ({
+  usersToSpaces: many(usersToSpaces),
+  spacesToGroups: many(spacesToGroups),
+}));
+
+export const groups = sqliteTable("group", {
+  id: int("id", { mode: "number" }).primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+});
+
+export const groupsRelations = relations(groups, ({ many }) => ({
+  usersToGroups: many(usersToGroups),
+  spacesToGroups: many(spacesToGroups),
+}));
+
+export const usersToGroups = sqliteTable(
+  "users_to_groups",
+  {
+    userId: int("user_id")
+      .notNull()
+      .references(() => users.id),
+    groupId: int("group_id")
+      .notNull()
+      .references(() => groups.id),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.groupId] }),
+  }),
+);
+
+export const usersToGroupsRelations = relations(usersToGroups, ({ one }) => ({
+  group: one(groups, {
+    fields: [usersToGroups.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [usersToGroups.userId],
+    references: [users.id],
+  }),
+}));
+
+export const usersToSpaces = sqliteTable(
+  "users_to_spaces",
+  {
+    userId: int("user_id")
+      .notNull()
+      .references(() => users.id),
+    spaceId: int("space_id")
+      .notNull()
+      .references(() => spaces.id),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.spaceId] }),
+  }),
+);
+
+export const usersToSpacesRelations = relations(usersToSpaces, ({ one }) => ({
+  space: one(spaces, {
+    fields: [usersToSpaces.spaceId],
+    references: [spaces.id],
+  }),
+  user: one(users, {
+    fields: [usersToSpaces.userId],
+    references: [users.id],
+  }),
+}));
+
+export const spacesToGroups = sqliteTable(
+  "spaces_to_groups",
+  {
+    spaceId: int("space_id")
+      .notNull()
+      .references(() => spaces.id),
+    groupId: int("group_id")
+      .notNull()
+      .references(() => groups.id),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.groupId, t.spaceId] }),
+  }),
+);
+
+export const spacesToGroupsRelations = relations(spacesToGroups, ({ one }) => ({
+  space: one(spaces, {
+    fields: [spacesToGroups.spaceId],
+    references: [spaces.id],
+  }),
+  group: one(groups, {
+    fields: [spacesToGroups.groupId],
+    references: [groups.id],
+  }),
+}));
+
+/*
 export const posts = createTable(
   "post",
   {
@@ -34,21 +153,15 @@ export const posts = createTable(
     nameIndex: index("name_idx").on(example.name),
   })
 );
+*/
 
-export const users = createTable("user", {
-  id: text("id", { length: 255 }).notNull().primaryKey(),
-  name: text("name", { length: 255 }),
-  email: text("email", { length: 255 }).notNull(),
-  emailVerified: int("emailVerified", {
-    mode: "timestamp",
-  }).default(sql`CURRENT_TIMESTAMP`),
-  image: text("image", { length: 255 }),
-});
-
+/*
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
 }));
+*/
 
+/*
 export const accounts = createTable(
   "account",
   {
@@ -75,7 +188,9 @@ export const accounts = createTable(
     userIdIdx: index("account_userId_idx").on(account.userId),
   })
 );
+*/
 
+/*
 export const accountsRelations = relations(accounts, ({ one }) => ({
   user: one(users, { fields: [accounts.userId], references: [users.id] }),
 }));
@@ -109,3 +224,4 @@ export const verificationTokens = createTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 );
+*/
